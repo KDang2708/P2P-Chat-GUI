@@ -29,7 +29,7 @@
   <img src="Extra/screenshots/chat-interface.png" width="48%" alt="Giao diện chat chính">
   <img src="Extra/screenshots/connect-screen.png" width="48%" alt="Màn hình kết nối">
 </p>
-
+```
 > **Lưu ý**: Thay thế đường dẫn ảnh trên bằng ảnh thật của bạn trong thư mục `Extra/screenshots/`.  
 > Nếu bạn đã quay video demo, hãy upload lên GitHub Releases hoặc YouTube và thay link vào đây.
 
