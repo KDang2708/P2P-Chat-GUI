@@ -3,7 +3,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Chatter.Core
+namespace P2PChatGUI.Core
 {
     /// <summary>
     /// Lớp xử lý lõi mạng cho ứng dụng chat, cung cấp các chức năng kết nối, gửi và nhận tin nhắn qua TCP.
