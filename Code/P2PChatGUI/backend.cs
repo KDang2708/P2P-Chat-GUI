@@ -10,7 +10,9 @@ namespace Chatter.Core
     /// </summary>
     public class ChatNetworkCore
     {
-        // Client TCP dùng để kết nối đến server hoặc peer
+        // Server lắng nghe kết nối đến
+        private TcpListener _listener;
+        // Client TCP dùng để kết nối đến peer
         private TcpClient _client;
         // Luồng dữ liệu mạng để thực hiện thao tác đọc/ghi
         private NetworkStream _stream;
@@ -21,6 +23,35 @@ namespace Chatter.Core
         public event Action<string> OnSystemMessage;
         // Sự kiện phát ra khi bị ngắt kết nối
         public event Action OnDisconnected;
+
+        /// <summary>
+        /// Bắt đầu phân hệ lắng nghe (Host) cho một cổng cụ thể.
+        /// </summary>
+        /// <param name="port">Cổng mạng để mở lên lắng nghe</param>
+        public async Task StartListeningAsync(int port)
+        {
+            try
+            {
+                _listener = new TcpListener(System.Net.IPAddress.Any, port);
+                _listener.Start();
+                OnSystemMessage?.Invoke($"Đang chờ đối phương kết nối tại cổng {port}...");
+
+                _client = await _listener.AcceptTcpClientAsync();
+                _stream = _client.GetStream();
+
+                OnSystemMessage?.Invoke("Đã có người kết nối tới!");
+
+                // Tắt bộ lắng nghe sau khi có người kết nối thành công (ưu tiên chat 1-1)
+                _listener.Stop();
+
+                // Bắt đầu vòng lặp lắng nghe tin nhắn đến chạy ngầm
+                _ = ListenForMessagesAsync();
+            }
+            catch (Exception ex)
+            {
+                OnSystemMessage?.Invoke($"Lỗi tạo phòng: {ex.Message}");
+            }
+        }
 
         /// <summary>
         /// Kết nối tới một địa chỉ IP và cổng (port) được chỉ định một cách bất đồng bộ.
@@ -141,6 +172,7 @@ namespace Chatter.Core
         /// </summary>
         public void Disconnect()
         {
+            _listener?.Stop();
             _stream?.Close();
             _client?.Close();
         }

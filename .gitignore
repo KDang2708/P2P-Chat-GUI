@@ -1,0 +1,83 @@
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio files
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.rsuser
+
+# Visual Studio cache/options directory
+.vs/
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+
+# NuGet packages
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+
+# MSBuild output
+*.metaproj
+*.metaproj.tmp
+
+# Windows specific
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Rider IDE
+.idea/
+*.sln.iml
+
+# Resharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# JetBrains
+*.DotSettings
+
+# dotCover
+*.dotCover
+
+# User-specific files
+*.user
+*.suo
+*.cache
+
+# Build results
+[Dd]ebugPublic/
+[Rr]eleases/
+[Aa]rtifacts/
+
+# Publish output
+[Pp]ublish/
+[Pp]ublished/
+
+# Backup & temp files
+*~
+*.bak
+*.swp
+*.tmp
+*.temp
+
+# Office temp files
+~$*
+*.~*
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
