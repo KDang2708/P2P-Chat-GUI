@@ -1,33 +1,37 @@
 using System;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace P2PChatGUI.Core
 {
     /// <summary>
-    /// Lớp xử lý lõi mạng cho ứng dụng chat, cung cấp các chức năng kết nối, gửi và nhận tin nhắn qua TCP.
+    /// Lớp xử lý lõi mạng cho ứng dụng chat P2P 1-1 qua TCP.
+    /// Đã được cải tiến: cancellation, resource management, robustness.
     /// </summary>
-    public class ChatNetworkCore
+    public class ChatNetworkCore : IAsyncDisposable, IDisposable
     {
-        // Server lắng nghe kết nối đến
-        private TcpListener _listener;
-        // Client TCP dùng để kết nối đến peer
-        private TcpClient _client;
-        // Luồng dữ liệu mạng để thực hiện thao tác đọc/ghi
-        private NetworkStream _stream;
+        private TcpListener? _listener;
+        private TcpClient? _client;
+        private NetworkStream? _stream;
 
-        // Sự kiện phát ra khi nhận được tin nhắn mới
-        public event Action<string> OnMessageReceived;
-        // Sự kiện phát ra cho các thông báo hệ thống (như thông báo lỗi, trạng thái kết nối)
-        public event Action<string> OnSystemMessage;
-        // Sự kiện phát ra khi bị ngắt kết nối
-        public event Action OnDisconnected;
+        private readonly CancellationTokenSource _cts = new();
+        private Task? _listenTask;
+
+        // Flag để tránh gọi OnDisconnected nhiều lần
+        private volatile bool _isDisconnected = false;
+
+        // Giới hạn kích thước tin nhắn (10MB) để tránh tấn công
+        private const int MaxMessageSize = 10 * 1024 * 1024;
+
+        public event Action<string>? OnMessageReceived;
+        public event Action<string>? OnSystemMessage;
+        public event Action? OnDisconnected;
 
         /// <summary>
-        /// Bắt đầu phân hệ lắng nghe (Host) cho một cổng cụ thể.
+        /// Bắt đầu làm Host (lắng nghe kết nối).
         /// </summary>
-        /// <param name="port">Cổng mạng để mở lên lắng nghe</param>
         public async Task StartListeningAsync(int port)
         {
             try
@@ -36,145 +40,227 @@ namespace P2PChatGUI.Core
                 _listener.Start();
                 OnSystemMessage?.Invoke($"Đang chờ đối phương kết nối tại cổng {port}...");
 
-                _client = await _listener.AcceptTcpClientAsync();
+                _client = await _listener.AcceptTcpClientAsync(_cts.Token);
+                ConfigureClient(_client);
+
                 _stream = _client.GetStream();
 
                 OnSystemMessage?.Invoke("Đã có người kết nối tới!");
+                _listener.Stop(); // Chỉ hỗ trợ 1-1
 
-                // Tắt bộ lắng nghe sau khi có người kết nối thành công (ưu tiên chat 1-1)
-                _listener.Stop();
-
-                // Bắt đầu vòng lặp lắng nghe tin nhắn đến chạy ngầm
-                _ = ListenForMessagesAsync();
+                _listenTask = ListenForMessagesAsync(_cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                // Người dùng chủ động hủy
             }
             catch (Exception ex)
             {
                 OnSystemMessage?.Invoke($"Lỗi tạo phòng: {ex.Message}");
+                await CleanupAsync();
             }
         }
 
         /// <summary>
-        /// Kết nối tới một địa chỉ IP và cổng (port) được chỉ định một cách bất đồng bộ.
+        /// Kết nối đến peer (làm Client).
         /// </summary>
-        /// <param name="ipAddress">Địa chỉ IP của máy đích</param>
-        /// <param name="port">Cổng mạng để kết nối</param>
         public async Task ConnectAsync(string ipAddress, int port)
         {
             try
             {
                 _client = new TcpClient();
-                await _client.ConnectAsync(ipAddress, port);
-                _stream = _client.GetStream(); // Lấy luồng dữ liệu sau khi kết nối thành công
-                
+                ConfigureClient(_client);
+
+                await _client.ConnectAsync(ipAddress, port, _cts.Token);
+                _stream = _client.GetStream();
+
                 OnSystemMessage?.Invoke("Đã kết nối thành công!");
 
-                // Bắt đầu vòng lặp lắng nghe tin nhắn đến chạy ngầm
-                _ = ListenForMessagesAsync();
+                _listenTask = ListenForMessagesAsync(_cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
             }
             catch (Exception ex)
             {
-                // Thông báo lên giao diện nếu quá trình kết nối gặp sự cố
                 OnSystemMessage?.Invoke($"Lỗi kết nối: {ex.Message}");
+                await CleanupAsync();
             }
         }
 
+        private void ConfigureClient(TcpClient client)
+        {
+            client.NoDelay = true;                    // Gửi tin nhắn ngay lập tức (thấp latency)
+            client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
+            // Có thể thêm TcpKeepAliveTime, TcpKeepAliveInterval nếu cần (chỉ hỗ trợ một số nền tảng)
+        }
+
         /// <summary>
-        /// Gửi một tin nhắn văn bản qua mạng với cơ chế Length-Prefix một cách bất đồng bộ.
+        /// Gửi tin nhắn với Length-Prefix (4 byte).
         /// </summary>
-        /// <param name="message">Nội dung tin nhắn cần gửi</param>
         public async Task SendMessageAsync(string message)
         {
-            // Kiểm tra trạng thái kết nối và tính hợp lệ của tin nhắn trước khi gửi
-            if (_client == null || !_client.Connected || string.IsNullOrWhiteSpace(message))
+            if (_stream == null || !_client?.Connected == true || string.IsNullOrWhiteSpace(message))
                 return;
 
             try
             {
-                // Chuyển đổi chuỗi văn bản thành mảng byte với chuẩn mã hóa UTF-8
                 byte[] data = Encoding.UTF8.GetBytes(message);
-                
-                // Tạo 4 byte chứa kích thước của dữ liệu
+                if (data.Length > MaxMessageSize)
+                {
+                    OnSystemMessage?.Invoke("Tin nhắn quá dài!");
+                    return;
+                }
+
                 byte[] lengthPrefix = BitConverter.GetBytes(data.Length);
-                
-                // Gửi 4 byte kích thước trước
-                await _stream.WriteAsync(lengthPrefix, 0, lengthPrefix.Length);
-                
-                // Sau đó gửi dữ liệu thực tế nội dung tin nhắn
-                await _stream.WriteAsync(data, 0, data.Length);
+
+                await _stream.WriteAsync(lengthPrefix, _cts.Token);
+                await _stream.WriteAsync(data, _cts.Token);
+                await _stream.FlushAsync(_cts.Token);   // Đảm bảo gửi ngay
             }
-            catch (Exception)
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 OnSystemMessage?.Invoke("Lỗi khi gửi tin nhắn.");
+                await HandleDisconnectionAsync();
             }
         }
 
         /// <summary>
-        /// Lắng nghe và nhận liên tục các tin nhắn đóng gói theo cơ chế Length-Prefix.
+        /// Vòng lặp nhận tin nhắn với Length-Prefix.
         /// </summary>
-        private async Task ListenForMessagesAsync()
+        private async Task ListenForMessagesAsync(CancellationToken token)
         {
             try
             {
-                while (true)
+                while (!token.IsCancellationRequested && _stream != null)
                 {
-                    // Bước 1: Đọc chính xác 4 byte đầu tiên để biết kích thước của tin nhắn sắp tới
+                    // Đọc 4 byte length
                     byte[] lengthBuffer = new byte[4];
-                    int lengthBytesRead = 0;
-                    
-                    while (lengthBytesRead < 4)
+                    int bytesRead = await ReadExactlyAsync(_stream, lengthBuffer, 4, token);
+
+                    if (bytesRead == 0)
                     {
-                        int read = await _stream.ReadAsync(lengthBuffer, lengthBytesRead, 4 - lengthBytesRead);
-                        // Nếu đang đọc dở mà số byte bằng 0 nghĩa là đối phương ngắt kết nối
-                        if (read == 0)
-                        {
-                            OnSystemMessage?.Invoke("Người dùng kia đã thoát.");
-                            OnDisconnected?.Invoke();
-                            return;
-                        }
-                        lengthBytesRead += read;
+                        await HandleDisconnectionAsync();
+                        return;
                     }
 
-                    // Giải mã 4 byte thành một số nguyên (độ dài tin nhắn)
                     int dataSize = BitConverter.ToInt32(lengthBuffer, 0);
 
-                    // Bước 2: Dựa vào độ dài vừa đọc, khởi tạo mảng để nhận đúng kích thước dữ liệu
-                    byte[] dataBuffer = new byte[dataSize];
-                    int totalDataRead = 0;
-                    
-                    while (totalDataRead < dataSize)
+                    if (dataSize <= 0 || dataSize > MaxMessageSize)
                     {
-                        int read = await _stream.ReadAsync(dataBuffer, totalDataRead, dataSize - totalDataRead);
-                        if (read == 0)
-                        {
-                            OnSystemMessage?.Invoke("Người dùng kia đã bị ngắt kết nối khi đang gửi dữ liệu.");
-                            OnDisconnected?.Invoke();
-                            return;
-                        }
-                        totalDataRead += read;
+                        OnSystemMessage?.Invoke("Nhận được tin nhắn không hợp lệ (kích thước sai).");
+                        await HandleDisconnectionAsync();
+                        return;
                     }
 
-                    // Giải mã dữ liệu mảng byte thành chuỗi văn bản UTF-8
-                    string message = Encoding.UTF8.GetString(dataBuffer, 0, dataSize);
-                    
-                    // Phát ra sự kiện báo hiệu có tin nhắn mới cho giao diện
+                    // Đọc nội dung tin nhắn
+                    byte[] dataBuffer = new byte[dataSize];
+                    bytesRead = await ReadExactlyAsync(_stream, dataBuffer, dataSize, token);
+
+                    if (bytesRead == 0)
+                    {
+                        await HandleDisconnectionAsync();
+                        return;
+                    }
+
+                    string message = Encoding.UTF8.GetString(dataBuffer);
                     OnMessageReceived?.Invoke(message);
                 }
             }
-            catch (Exception)
+            catch (OperationCanceledException)
             {
-                // Lỗi ném ra nếu bị ngắt kết nối đột ngột hoặc lỗi đường truyền
-                OnDisconnected?.Invoke();
+                // Shutdown bình thường
+            }
+            catch (Exception ex)
+            {
+                if (!_isDisconnected)
+                {
+                    OnSystemMessage?.Invoke($"Lỗi nhận tin nhắn: {ex.Message}");
+                }
+                await HandleDisconnectionAsync();
             }
         }
 
         /// <summary>
-        /// Đóng luồng dữ liệu và ngắt kết nối client TCP để giải phóng các tài nguyên mạng.
+        /// Helper: Đọc chính xác số byte yêu cầu (hoặc 0 nếu disconnect).
         /// </summary>
-        public void Disconnect()
+        private static async Task<int> ReadExactlyAsync(NetworkStream stream, byte[] buffer, int count, CancellationToken token)
         {
-            _listener?.Stop();
-            _stream?.Close();
-            _client?.Close();
+            int totalRead = 0;
+            while (totalRead < count)
+            {
+                int read = await stream.ReadAsync(buffer, totalRead, count - totalRead, token);
+                if (read == 0) 
+                    return 0; // Đối phương ngắt kết nối
+
+                totalRead += read;
+            }
+            return totalRead;
+        }
+
+        private async Task HandleDisconnectionAsync()
+        {
+            if (_isDisconnected) return;
+            _isDisconnected = true;
+
+            OnSystemMessage?.Invoke("Người dùng kia đã thoát hoặc kết nối bị ngắt.");
+            OnDisconnected?.Invoke();
+
+            await CleanupAsync();
+        }
+
+        private async Task CleanupAsync()
+        {
+            try
+            {
+                _cts.Cancel();
+
+                if (_stream != null)
+                {
+                    await _stream.DisposeAsync();
+                    _stream = null;
+                }
+
+                _client?.Close();
+                _client?.Dispose();
+                _client = null;
+
+                _listener?.Stop();
+                _listener = null;
+            }
+            catch { /* ignore cleanup errors */ }
+        }
+
+        /// <summary>
+        /// Ngắt kết nối sạch sẽ.
+        /// </summary>
+        public async Task DisconnectAsync()
+        {
+            await CleanupAsync();
+
+            // Chờ task lắng nghe kết thúc (tối đa 2 giây)
+            if (_listenTask != null)
+            {
+                try
+                {
+                    await Task.WhenAny(_listenTask, Task.Delay(2000));
+                }
+                catch { }
+            }
+        }
+
+        public void Disconnect() => DisconnectAsync().Wait(1000); // Phiên bản sync cho tiện
+
+        public async ValueTask DisposeAsync()
+        {
+            await DisconnectAsync();
+            _cts.Dispose();
+        }
+
+        public void Dispose()
+        {
+            Disconnect();
+            _cts.Dispose();
         }
     }
 }
