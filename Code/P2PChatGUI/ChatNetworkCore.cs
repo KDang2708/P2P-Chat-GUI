@@ -1,4 +1,5 @@
 using System;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
@@ -6,10 +7,6 @@ using System.Threading.Tasks;
 
 namespace P2PChatGUI.Core
 {
-    /// <summary>
-    /// Lớp xử lý lõi mạng cho ứng dụng chat P2P 1-1 qua TCP.
-    /// Đã được cải tiến: cancellation, resource management, robustness.
-    /// </summary>
     public class ChatNetworkCore : IAsyncDisposable, IDisposable
     {
         private TcpListener? _listener;
@@ -34,9 +31,15 @@ namespace P2PChatGUI.Core
         /// </summary>
         public async Task StartListeningAsync(int port)
         {
+            if (!IsValidPort(port))
+            {
+                OnSystemMessage?.Invoke("Port không hợp lệ. Port phải từ 1 đến 65535.");
+                return;
+            }
+
             try
             {
-                _listener = new TcpListener(System.Net.IPAddress.Any, port);
+                _listener = new TcpListener(IPAddress.Any, port);
                 _listener.Start();
                 OnSystemMessage?.Invoke($"Đang chờ đối phương kết nối tại cổng {port}...");
 
@@ -52,7 +55,6 @@ namespace P2PChatGUI.Core
             }
             catch (OperationCanceledException)
             {
-                // Người dùng chủ động hủy
             }
             catch (Exception ex)
             {
@@ -66,6 +68,18 @@ namespace P2PChatGUI.Core
         /// </summary>
         public async Task ConnectAsync(string ipAddress, int port)
         {
+            if (!IsValidIpAddress(ipAddress))
+            {
+                OnSystemMessage?.Invoke("IP không hợp lệ.");
+                return;
+            }
+
+            if (!IsValidPort(port))
+            {
+                OnSystemMessage?.Invoke("Port không hợp lệ. Port phải từ 1 đến 65535.");
+                return;
+            }
+
             try
             {
                 _client = new TcpClient();
@@ -86,6 +100,14 @@ namespace P2PChatGUI.Core
                 OnSystemMessage?.Invoke($"Lỗi kết nối: {ex.Message}");
                 await CleanupAsync();
             }
+        }
+
+        private static bool IsValidPort(int port) => port >= 1 && port <= 65535;
+
+        private static bool IsValidIpAddress(string ipAddress)
+        {
+            return !string.IsNullOrWhiteSpace(ipAddress) &&
+                   IPAddress.TryParse(ipAddress.Trim(), out _);
         }
 
         private void ConfigureClient(TcpClient client)
