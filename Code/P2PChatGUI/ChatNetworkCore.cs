@@ -13,7 +13,7 @@ namespace P2PChatGUI.Core
         private TcpClient? _client;
         private NetworkStream? _stream;
 
-        private readonly CancellationTokenSource _cts = new();
+        private CancellationTokenSource _cts = new();
         private Task? _listenTask;
 
         // Flag để tránh gọi OnDisconnected nhiều lần
@@ -29,19 +29,26 @@ namespace P2PChatGUI.Core
         /// <summary>
         /// Bắt đầu làm Host (lắng nghe kết nối).
         /// </summary>
-        public async Task StartListeningAsync(int port)
+        public async Task<bool> StartListeningAsync(string ipAddress, int port)
         {
+            if (!IsValidIpAddress(ipAddress))
+            {
+                OnSystemMessage?.Invoke("IP không hợp lệ.");
+                return false;
+            }
+
             if (!IsValidPort(port))
             {
                 OnSystemMessage?.Invoke("Port không hợp lệ. Port phải từ 1 đến 65535.");
-                return;
+                return false;
             }
 
             try
             {
-                _listener = new TcpListener(IPAddress.Any, port);
+                IPAddress ip = IPAddress.Parse(ipAddress.Trim());
+                _listener = new TcpListener(ip, port);
                 _listener.Start();
-                OnSystemMessage?.Invoke($"Đang chờ đối phương kết nối tại cổng {port}...");
+                OnSystemMessage?.Invoke($"Đang chờ đối phương kết nối tại {ip}:{port}...");
 
                 _client = await _listener.AcceptTcpClientAsync(_cts.Token);
                 ConfigureClient(_client);
@@ -52,32 +59,35 @@ namespace P2PChatGUI.Core
                 _listener.Stop(); // Chỉ hỗ trợ 1-1
 
                 _listenTask = ListenForMessagesAsync(_cts.Token);
+                return true;
             }
             catch (OperationCanceledException)
             {
+                return false;
             }
             catch (Exception ex)
             {
                 OnSystemMessage?.Invoke($"Lỗi tạo phòng: {ex.Message}");
                 await CleanupAsync();
+                return false;
             }
         }
 
         /// <summary>
         /// Kết nối đến peer (làm Client).
         /// </summary>
-        public async Task ConnectAsync(string ipAddress, int port)
+        public async Task<bool> ConnectAsync(string ipAddress, int port)
         {
             if (!IsValidIpAddress(ipAddress))
             {
                 OnSystemMessage?.Invoke("IP không hợp lệ.");
-                return;
+                return false;
             }
 
             if (!IsValidPort(port))
             {
                 OnSystemMessage?.Invoke("Port không hợp lệ. Port phải từ 1 đến 65535.");
-                return;
+                return false;
             }
 
             try
@@ -91,14 +101,17 @@ namespace P2PChatGUI.Core
                 OnSystemMessage?.Invoke("Đã kết nối thành công!");
 
                 _listenTask = ListenForMessagesAsync(_cts.Token);
+                return true;
             }
             catch (OperationCanceledException)
             {
+                return false;
             }
             catch (Exception ex)
             {
                 OnSystemMessage?.Invoke($"Lỗi kết nối: {ex.Message}");
                 await CleanupAsync();
+                return false;
             }
         }
 
@@ -249,6 +262,9 @@ namespace P2PChatGUI.Core
 
                 _listener?.Stop();
                 _listener = null;
+
+                _cts.Dispose();
+                _cts = new CancellationTokenSource();
             }
             catch { /* ignore cleanup errors */ }
         }
