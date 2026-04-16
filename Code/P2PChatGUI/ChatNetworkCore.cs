@@ -50,7 +50,19 @@ namespace P2PChatGUI.Core
                 _listener.Start();
                 OnSystemMessage?.Invoke($"Đang chờ đối phương kết nối tại {ip}:{port}...");
 
-                _client = await _listener.AcceptTcpClientAsync(_cts.Token);
+                while (true)
+                {
+                    _client = await _listener.AcceptTcpClientAsync(_cts.Token);
+                    if (_client.Client.RemoteEndPoint != null &&
+                        _client.Client.LocalEndPoint != null &&
+                        _client.Client.RemoteEndPoint.Equals(_client.Client.LocalEndPoint))
+                    {
+                        _client.Close();
+                        continue;
+                    }
+                    break;
+                }
+
                 ConfigureClient(_client);
 
                 _stream = _client.GetStream();

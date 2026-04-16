@@ -43,6 +43,8 @@ namespace P2PChatGUI
                     txtChat.SelectionColor = Color.Red;
                     txtChat.AppendText("⚠ Mất kết nối\n");
                     btnSend.Enabled = false;
+                    btnHost.Enabled = true;
+                    btnConnect.Enabled = true;
                 }));
             };
         }
@@ -55,21 +57,37 @@ namespace P2PChatGUI
 
         private async void btnHost_Click(object sender, EventArgs e)
         {
+            btnHost.Enabled = false;
+            btnConnect.Enabled = false;
+
             if (await network.StartListeningAsync(txtIP.Text, int.Parse(txtPort.Text)))
             {
                 txtChat.AppendText("✔ Bạn đang là Host\n");
                 btnSend.Enabled = true;
                 txtMessage.Focus();
             }
+            else
+            {
+                btnHost.Enabled = true;
+                btnConnect.Enabled = true;
+            }
         }
 
         private async void btnConnect_Click(object sender, EventArgs e)
         {
+            btnConnect.Enabled = false;
+            btnHost.Enabled = false;
+
             if (await network.ConnectAsync(txtIP.Text, int.Parse(txtPort.Text)))
             {
                 txtChat.AppendText("✔ Đã kết nối\n");
                 btnSend.Enabled = true;
                 txtMessage.Focus();
+            }
+            else
+            {
+                btnConnect.Enabled = true;
+                btnHost.Enabled = true;
             }
         }
 
@@ -108,6 +126,8 @@ namespace P2PChatGUI
             txtChat.AppendText("❌ Bạn đã ngắt kết nối\n");
 
             btnSend.Enabled = false;
+            btnHost.Enabled = true;
+            btnConnect.Enabled = true;
         }
     }
 }
