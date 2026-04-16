@@ -93,7 +93,7 @@
             this.Controls.Add(txtMessage);
             this.Controls.Add(btnSend);
 
-            this.Text = "P2P Chat - Lê Anh Kiệt";
+            this.Text = "P2P Chat";
             this.Load += new System.EventHandler(this.Form1_Load);
 
             this.ResumeLayout(false);

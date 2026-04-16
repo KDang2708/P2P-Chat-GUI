@@ -16,6 +16,7 @@ namespace P2PChatGUI
             network = new ChatNetworkCore();
 
             btnSend.Enabled = false;
+            btnDisconnect.Enabled = false;
 
             network.OnMessageReceived += (msg) =>
             {
@@ -45,6 +46,7 @@ namespace P2PChatGUI
                     btnSend.Enabled = false;
                     btnHost.Enabled = true;
                     btnConnect.Enabled = true;
+                    btnDisconnect.Enabled = false;
                 }));
             };
         }
@@ -59,6 +61,7 @@ namespace P2PChatGUI
         {
             btnHost.Enabled = false;
             btnConnect.Enabled = false;
+            btnDisconnect.Enabled = true;
 
             if (await network.StartListeningAsync(txtIP.Text, int.Parse(txtPort.Text)))
             {
@@ -70,6 +73,7 @@ namespace P2PChatGUI
             {
                 btnHost.Enabled = true;
                 btnConnect.Enabled = true;
+                btnDisconnect.Enabled = false;
             }
         }
 
@@ -77,6 +81,7 @@ namespace P2PChatGUI
         {
             btnConnect.Enabled = false;
             btnHost.Enabled = false;
+            btnDisconnect.Enabled = true;
 
             if (await network.ConnectAsync(txtIP.Text, int.Parse(txtPort.Text)))
             {
@@ -88,6 +93,7 @@ namespace P2PChatGUI
             {
                 btnConnect.Enabled = true;
                 btnHost.Enabled = true;
+                btnDisconnect.Enabled = false;
             }
         }
 
@@ -128,6 +134,7 @@ namespace P2PChatGUI
             btnSend.Enabled = false;
             btnHost.Enabled = true;
             btnConnect.Enabled = true;
+            btnDisconnect.Enabled = false;
         }
     }
 }
