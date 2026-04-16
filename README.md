@@ -1,106 +1,81 @@
-## 🚀 Tính năng chính
+# ?? P2P Chat GUI (.NET 8 WinForms)
 
-- Kết nối P2P **thuần túy** (không qua server trung gian)
-- Nhập IP + Port thủ công để kết nối
-- Gửi/nhận tin nhắn realtime, hỗ trợ Unicode & emoji
-- Hiển thị lịch sử chat rõ ràng
-- Trạng thái kết nối trực quan (đang chờ • đã kết nối • mất kết nối)
-- Giao diện hiện đại, responsive (sử dụng customtkinter)
-- Multi-threading: không bị treo khi gửi/nhận
-- Dễ mở rộng: hỗ trợ gửi file, voice note (có thể thêm sau)
+D? �n ?ng d?ng chat Peer-to-Peer (P2P) tr?c ti?p gi?a 2 m�y t�nh th�ng qua m?ng LAN ho?c Internet, du?c x�y d?ng b?ng **C# v� .NET 8 WinForms**.
 
-## 🛠️ Công nghệ sử dụng
+## ? T�nh nang ch�nh
 
-| Thành phần       | Công cụ / Thư viện              |
-|------------------|----------------------------------|
-| Ngôn ngữ         | Python 3.10+                     |
-| Giao diện        | Tkinter + customtkinter          |
-| Mạng             | socket (TCP)                     |
-| Đa luồng         | threading                        |
-| Theme UI         | customtkinter (hoặc ttkbootstrap)|
-| Quản lý dự án    | Git                              |
+- K?t n?i P2P **thu?n t�y** th�ng qua TCP Sockets.
+- C� kh? nang ho?t d?ng du?i vai tr� **Host** (ch? k?t n?i) ho?c **Client** (ch? d?ng k?t n?i).
+- Giao di?n ngu?i d�ng WinForms don gi?n, d? s? d?ng.
+- Nh?n tin theo th?i gian th?c (Realtime), ch?ng d?t g�y g�i tin b?ng k? thu?t **Length-Prefixed Framing**.
+- Ho?t d?ng da lu?ng b?ng sync/await gi�p giao di?n lu�n mu?t m�.
+- T? d?ng ch?n s? c? t? k?t n?i (Loopback) v� c� trang b? gi?i h?n k�ch c? tin nh?n d? b?o m?t (t?i da 10MB).
 
-## 📥 Cài đặt & Chạy nhanh
+## ?? N?n t?ng & C�ng ngh? s? d?ng
 
-### Yêu cầu hệ thống
+| Th�nh ph?n       | C�ng c? / Thu vi?n                  |
+|------------------|-------------------------------------|
+| Ng�n ng?         | C# 12.0                             |
+| N?n t?ng         | .NET 8                              |
+| Giao di?n        | Windows Forms (WinForms)            |
+| M?ng             | System.Net.Sockets (TCP)            |
+| X? l� d?ng th?i  | async / await, Task, NetworkStream  |
 
-- Python 3.10 trở lên
-- pip (đã cài sẵn trong hầu hết các bản Python)
+## ?? C�i d?t & Ch?y ?ng d?ng
 
-### Các bước
+### Y�u c?u h? th?ng
 
-```bash
-# 1. Clone hoặc tải dự án về
-git clone https://github.com/[username-cua-ban]/P2P-Chat-GUI.git
-# hoặc tải ZIP và giải nén
+- Windows 10 / 11.
+- .NET 8.0 Desktop Runtime (N?u ch? ch?y file build).
+- Visual Studio 2022 (N?u mu?n m? v� ch?y source code).
 
-cd P2P-Chat-GUI
+### C�c bu?c ch?y code
 
-# 2. Cài đặt các thư viện cần thiết
-pip install -r Code/requirements.txt
+1. **Clone d? �n v? m�y:**
+   \\\ash
+   git clone https://github.com/KDang2708/P2P-Chat-GUI.git
+   cd P2P-Chat-GUI
+   \\\
 
-# 3. Chạy ứng dụng
-python Code/src/main.py
-```
+2. M? Solution b?ng **Visual Studio** (ho?c d�ng du?ng d?n Code/P2PChatGUI).
+3. Nh?n **F5** ho?c ch?n **Start** d? build v� ch?y ?ng d?ng.
 
-**Nội dung file `Code/requirements.txt`** (nên có):
+## ? Hu?ng d?n s? d?ng
 
-```
-customtkinter>=5.2.0
-pillow>=9.0.0    # nếu dùng hình ảnh/icon
-```
+?ng d?ng cho ph�p chat 1-1 gi?a hai thi?t b? (ho?c ch?y 2 tab tr�n c�ng 1 m�y b?ng IP v�ng l?p 127.0.0.1).
 
-## ⚡ Hướng dẫn sử dụng (Demo 2 người)
+1. **M�y 1 (L�m Host):** 
+   - Nh?p IP m�y b?n (v� d?: 192.168.1.10 ho?c 127.0.0.1 n?u test c?c b?) v� Port mu?n m? (VD: 8888).
+   - Nh?n **Host**.
+2. **M�y 2 (L�m Client):**
+   - Nh?p IP v� Port tuong ?ng c?a M�y 1.
+   - Nh?n **Connect**.
+3. Sau khi k?t n?i th�nh c�ng, c? 2 s? nh?n du?c th�ng b�o "*? �� k?t n?i*". N�t g� tin nh?n s? du?c b?t l�n.
 
-1. **Cả hai máy** đều chạy chương trình
-2. **Người A**: copy địa chỉ IP của mình (thường là `192.168.x.x` nếu cùng LAN)
-3. **Người B**: nhập IP của A + port (mặc định 5555) → nhấn "Kết nối"
-4. Người A thấy thông báo "Đã kết nối" → bắt đầu chat!
+*Luu �: N�t Host/Connect/Disconnect s? du?c ?ng d?ng t? d?ng kh�a ho?c m? l?p l?i t�y theo tr?ng th�i m?ng d? tr�nh l?i.*
 
-**Test nhanh trên 1 máy**:
-- Chạy 2 instance chương trình
-- Dùng IP `127.0.0.1` (localhost)
-- Port khác nhau nếu cần (ví dụ: 5555 và 5556)
+## ?? C?u tr�c d? �n
 
-## 📂 Cấu trúc thư mục dự án
-
-```
+\\\
 P2P-Chat-GUI/
-├── Code/                    # Toàn bộ mã nguồn
-│   ├── src/
-│   │   ├── main.py
-│   │   ├── chat_app.py
-│   │   └── utils.py         # (nếu có hàm hỗ trợ)
-│   └── requirements.txt
-├── DOCX/                    # Báo cáo đồ án
-│   └── BaoCao_P2PChat.docx
-├── Extra/                   # Tài liệu bổ sung
-│   ├── diagrams/            # UML, sequence diagram, class diagram
-│   ├── screenshots/         # Ảnh chụp màn hình demo
-│   └── references/          # Tài liệu tham khảo, bài báo
-├── PPTX/                    # Slide thuyết trình
-│   └── TrinhBay_P2PChat.pptx
-└── README.md                # File này
-```
++-- Code/                           # To�n b? m� ngu?n C#
+�   +-- P2PChatGUI/
+�       +-- ChatNetworkCore.cs      # Core x? l� logic m?ng TCP P2P (Socket, Async, Framing)
+�       +-- Form1.cs                # Giao di?n ch�nh (C�c n�t, TextBox chat)
+�       +-- P2PChatGUI.csproj       # File project C# (.NET 8)
++-- DOCX/                           # B�o c�o d? �n
++-- Extra/                          # T�i li?u c?u tr�c, so d?
++-- PPTX/                           # Slide thuy?t tr�nh
++-- README.md                       # File hi?n th? n�y
+\\\
 
-## ⚠️ Hạn chế hiện tại
+## ?? H?n ch? hi?n t?i
 
-- Phải biết trước IP (không có cơ chế discovery tự động)
-- Không vượt NAT/router tự động (cần cùng LAN hoặc port forwarding)
-- Tin nhắn chưa được mã hóa end-to-end
-- Không có danh sách bạn bè / lưu trữ lịch sử lâu dài
+- Do s? d?ng k?t n?i TCP thu?n t�y, d? nh?n tin qua Internet ngu?i d�ng (Host) c?n ph?i m? c?ng m?ng (Port Forwarding) tr�n Router.
+- Hi?n t?i chua h? tr? m� h�a E2E, tin nh?n du?c truy?n di theo d?ng b?n r�.
+- Ch? h? tr? k?t n?i 1-1, chua c� c�c t�nh nang luu l?i nh�m ho?c l?ch s? h?i tho?i d�i h?n.
 
-## 📜 License
+## ?? License
 
 MIT License  
-Bạn hoàn toàn tự do sử dụng, chỉnh sửa, phân phối (ghi nguồn nếu có thể).
-
-## ❤️ Tác giả
-
-**Dang**  
-Ho Chi Minh City, Việt Nam • 2026
-
-<p align="center">
-  <sub>Made with ❤️ and endless debug sessions</sub>
-</p>
-```
+B?n ho�n to�n t? do s? d?ng, ch?nh s?a v� ph�n ph?i (ghi r� ngu?n n?u c� th?).
