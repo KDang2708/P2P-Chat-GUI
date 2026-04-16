@@ -1,81 +1,74 @@
-# ?? P2P Chat GUI (.NET 8 WinForms)
+# 💬 P2P Chat GUI (.NET 8 WinForms)
 
-D? �n ?ng d?ng chat Peer-to-Peer (P2P) tr?c ti?p gi?a 2 m�y t�nh th�ng qua m?ng LAN ho?c Internet, du?c x�y d?ng b?ng **C# v� .NET 8 WinForms**.
+Dự án ứng dụng chat Peer-to-Peer (P2P) trực tiếp giữa 2 máy tính thông qua mạng LAN hoặc Internet(yêu cầu Port Forwarding), được xây dựng bằng **C# và .NET 8 WinForms**.
 
-## ? T�nh nang ch�nh
+## 🚀 Tính năng chính
 
-- K?t n?i P2P **thu?n t�y** th�ng qua TCP Sockets.
-- C� kh? nang ho?t d?ng du?i vai tr� **Host** (ch? k?t n?i) ho?c **Client** (ch? d?ng k?t n?i).
-- Giao di?n ngu?i d�ng WinForms don gi?n, d? s? d?ng.
-- Nh?n tin theo th?i gian th?c (Realtime), ch?ng d?t g�y g�i tin b?ng k? thu?t **Length-Prefixed Framing**.
-- Ho?t d?ng da lu?ng b?ng sync/await gi�p giao di?n lu�n mu?t m�.
-- T? d?ng ch?n s? c? t? k?t n?i (Loopback) v� c� trang b? gi?i h?n k�ch c? tin nh?n d? b?o m?t (t?i da 10MB).
+- Kết nối P2P **thuần túy** thông qua TCP Sockets.
+- Có khả năng hoạt động dưới vai trò **Host** (chờ kết nối) hoặc **Client** (chủ động kết nối).
+- Giao diện người dùng WinForms đơn giản, dễ sử dụng.
+- Nhắn tin theo thời gian thực (Realtime).
+- Hoạt động đa luồng bằng `async/await` giúp giao diện luôn mượt mà.
 
-## ?? N?n t?ng & C�ng ngh? s? d?ng
+## 🧰 Nền tảng & Công nghệ sử dụng
 
-| Th�nh ph?n       | C�ng c? / Thu vi?n                  |
-|------------------|-------------------------------------|
-| Ng�n ng?         | C# 12.0                             |
-| N?n t?ng         | .NET 8                              |
-| Giao di?n        | Windows Forms (WinForms)            |
-| M?ng             | System.Net.Sockets (TCP)            |
-| X? l� d?ng th?i  | async / await, Task, NetworkStream  |
+| Thành phần      | Công cụ / Thư viện                 |
+| --------------- | ---------------------------------- |
+| Ngôn ngữ        | C# 12.0                            |
+| Nền tảng        | .NET 8                             |
+| Giao diện       | Windows Forms (WinForms)           |
+| Mạng            | System.Net.Sockets (TCP)           |
+| Xử lý đồng thời | async / await, Task, NetworkStream |
 
-## ?? C�i d?t & Ch?y ?ng d?ng
+## 📦 Cài đặt & Chạy ứng dụng
 
-### Y�u c?u h? th?ng
+### Yêu cầu hệ thống
 
 - Windows 10 / 11.
-- .NET 8.0 Desktop Runtime (N?u ch? ch?y file build).
-- Visual Studio 2022 (N?u mu?n m? v� ch?y source code).
+- .NET 8.0 Desktop Runtime (nếu chỉ chạy file build).
+- Visual Studio 2022 (nếu muốn mở và chạy source code).
 
-### C�c bu?c ch?y code
+### Các bước chạy code
 
-1. **Clone d? �n v? m�y:**
-   \\\ash
+1. **Clone dự án về máy:**
+
+   ```bash
    git clone https://github.com/KDang2708/P2P-Chat-GUI.git
    cd P2P-Chat-GUI
-   \\\
+   ```
 
-2. M? Solution b?ng **Visual Studio** (ho?c d�ng du?ng d?n Code/P2PChatGUI).
-3. Nh?n **F5** ho?c ch?n **Start** d? build v� ch?y ?ng d?ng.
+2. Mở Solution bằng **Visual Studio** (hoặc dùng đường dẫn `Code/P2PChatGUI`).
+3. Nhấn **F5** hoặc chọn **Start** để build và chạy ứng dụng.
 
-## ? Hu?ng d?n s? d?ng
+## 🧪 Hướng dẫn sử dụng
 
-?ng d?ng cho ph�p chat 1-1 gi?a hai thi?t b? (ho?c ch?y 2 tab tr�n c�ng 1 m�y b?ng IP v�ng l?p 127.0.0.1).
+Ứng dụng cho phép chat 1-1 giữa hai thiết bị (hoặc chạy 2 tab trên cùng 1 máy bằng IP vòng lặp `127.0.0.1`).
 
-1. **M�y 1 (L�m Host):** 
-   - Nh?p IP m�y b?n (v� d?: 192.168.1.10 ho?c 127.0.0.1 n?u test c?c b?) v� Port mu?n m? (VD: 8888).
-   - Nh?n **Host**.
-2. **M�y 2 (L�m Client):**
-   - Nh?p IP v� Port tuong ?ng c?a M�y 1.
-   - Nh?n **Connect**.
-3. Sau khi k?t n?i th�nh c�ng, c? 2 s? nh?n du?c th�ng b�o "*? �� k?t n?i*". N�t g� tin nh?n s? du?c b?t l�n.
+1. **Máy 1 (Làm Host):**
+   - Nhập IP máy bạn (ví dụ: `192.168.1.10` hoặc `127.0.0.1` nếu test cục bộ) và Port muốn mở (VD: `8888`).
+   - Nhấn **Host**.
+2. **Máy 2 (Làm Client):**
+   - Nhập IP và Port tương ứng của Máy 1.
+   - Nhấn **Connect**.
+3. Sau khi kết nối thành công, cả 2 sẽ nhận được thông báo "**✅ Đã kết nối**". Nút gửi tin nhắn sẽ được bật lên.
 
-*Luu �: N�t Host/Connect/Disconnect s? du?c ?ng d?ng t? d?ng kh�a ho?c m? l?p l?i t�y theo tr?ng th�i m?ng d? tr�nh l?i.*
+## 📁 Cấu trúc dự án
 
-## ?? C?u tr�c d? �n
-
-\\\
+```text
 P2P-Chat-GUI/
-+-- Code/                           # To�n b? m� ngu?n C#
-�   +-- P2PChatGUI/
-�       +-- ChatNetworkCore.cs      # Core x? l� logic m?ng TCP P2P (Socket, Async, Framing)
-�       +-- Form1.cs                # Giao di?n ch�nh (C�c n�t, TextBox chat)
-�       +-- P2PChatGUI.csproj       # File project C# (.NET 8)
-+-- DOCX/                           # B�o c�o d? �n
-+-- Extra/                          # T�i li?u c?u tr�c, so d?
-+-- PPTX/                           # Slide thuy?t tr�nh
-+-- README.md                       # File hi?n th? n�y
-\\\
+├── Code/                           # Toàn bộ mã nguồn C#
+│   └── P2PChatGUI/
+│       ├── ChatNetworkCore.cs      # Core xử lý logic mạng TCP P2P (Socket, Async, Framing)
+│       ├── Form1.cs                # Giao diện chính (các nút, TextBox chat)
+│       └── P2PChatGUI.csproj       # File project C# (.NET 8)
+├── DOCX/                           # Báo cáo dự án
+├── Extra/                          # Tài liệu cấu trúc, sơ đồ
+├── PPTX/                           # Slide thuyết trình
+└── README.md                       # File hiển thị này
+```
 
-## ?? H?n ch? hi?n t?i
+## ⚠️ Hạn chế hiện tại
 
-- Do s? d?ng k?t n?i TCP thu?n t�y, d? nh?n tin qua Internet ngu?i d�ng (Host) c?n ph?i m? c?ng m?ng (Port Forwarding) tr�n Router.
-- Hi?n t?i chua h? tr? m� h�a E2E, tin nh?n du?c truy?n di theo d?ng b?n r�.
-- Ch? h? tr? k?t n?i 1-1, chua c� c�c t�nh nang luu l?i nh�m ho?c l?ch s? h?i tho?i d�i h?n.
-
-## ?? License
-
-MIT License  
-B?n ho�n to�n t? do s? d?ng, ch?nh s?a v� ph�n ph?i (ghi r� ngu?n n?u c� th?).
+- Do sử dụng kết nối TCP thuần túy, để nhắn tin qua Internet người dùng (Host) cần phải mở cổng mạng (Port Forwarding) trên Router.
+- Hiện tại chưa hỗ trợ mã hóa E2E, tin nhắn được truyền đi theo dạng bản rõ.
+- Chỉ hỗ trợ kết nối 1-1, chưa có các tính năng lưu lại nhóm hoặc lịch sử hội thoại dài hạn.
