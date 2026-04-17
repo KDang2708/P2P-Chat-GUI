@@ -119,8 +119,12 @@ namespace P2PChatGUI
         {
             if (e.KeyCode == Keys.Enter)
             {
-                await SendMessage();
-                e.SuppressKeyPress = true;
+                e.SuppressKeyPress = true; // Luôn chặn tiếng "ting" khi ấn Enter
+
+                if (btnSend.Enabled) // Chỉ gửi nếu nút send đang được bật (đã kết nối)
+                {
+                    await SendMessage();
+                }
             }
         }
 
