@@ -29,7 +29,7 @@ namespace P2PChatGUI.Core
         /// <summary>
         /// Bắt đầu làm Host (lắng nghe kết nối).
         /// </summary>
-        public async Task<bool> StartListeningAsync(string ipAddress, int port)
+        public async Task<bool> StartListeningAsync(string ipAddress, string portString)
         {
             if (!IsValidIpAddress(ipAddress))
             {
@@ -37,9 +37,9 @@ namespace P2PChatGUI.Core
                 return false;
             }
 
-            if (!IsValidPort(port))
+            if (!IsValidPort(portString, out int port))
             {
-                OnSystemMessage?.Invoke("Port không hợp lệ. Port phải từ 1 đến 65535.");
+                OnSystemMessage?.Invoke("Port không hợp lệ. Port phải là số từ 1 đến 65535.");
                 return false;
             }
 
@@ -88,7 +88,7 @@ namespace P2PChatGUI.Core
         /// <summary>
         /// Kết nối đến peer (làm Client).
         /// </summary>
-        public async Task<bool> ConnectAsync(string ipAddress, int port)
+        public async Task<bool> ConnectAsync(string ipAddress, string portString)
         {
             if (!IsValidIpAddress(ipAddress))
             {
@@ -96,9 +96,9 @@ namespace P2PChatGUI.Core
                 return false;
             }
 
-            if (!IsValidPort(port))
+            if (!IsValidPort(portString, out int port))
             {
-                OnSystemMessage?.Invoke("Port không hợp lệ. Port phải từ 1 đến 65535.");
+                OnSystemMessage?.Invoke("Port không hợp lệ. Port phải là số từ 1 đến 65535.");
                 return false;
             }
 
@@ -128,6 +128,17 @@ namespace P2PChatGUI.Core
         }
 
         private static bool IsValidPort(int port) => port >= 1 && port <= 65535;
+
+        public static bool IsValidPort(string portString, out int port)
+        {
+            if (!string.IsNullOrWhiteSpace(portString) && int.TryParse(portString.Trim(), out port))
+            {
+                return port >= 1 && port <= 65535;
+            }
+
+            port = 0;
+            return false;
+        }
 
         private static bool IsValidIpAddress(string ipAddress)
         {
