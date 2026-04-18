@@ -135,7 +135,7 @@ namespace P2PChatGUI
             btnConnect.Enabled = false;
             btnDisconnect.Enabled = true;
 
-            if (await network.StartListeningAsync(txtIP.Text, int.Parse(txtPort.Text)))
+            if (await network.StartListeningAsync(txtIP.Text, txtPort.Text))
             {
                 AppendStyledText("Bạn đang là Host", Color.FromArgb(39, 174, 96), Color.FromArgb(240, 255, 240), Color.FromArgb(39, 174, 96));
                 btnSend.Enabled = true;
@@ -155,7 +155,7 @@ namespace P2PChatGUI
             btnHost.Enabled = false;
             btnDisconnect.Enabled = true;
 
-            if (await network.ConnectAsync(txtIP.Text, int.Parse(txtPort.Text)))
+            if (await network.ConnectAsync(txtIP.Text, txtPort.Text))
             {
                 AppendStyledText("Đã kết nối", Color.FromArgb(39, 174, 96), Color.FromArgb(240, 255, 240), Color.FromArgb(39, 174, 96));
                 btnSend.Enabled = true;
